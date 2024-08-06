@@ -24,10 +24,7 @@ wheels/
 /assets/images/
 TempAndTest
 /node_modules/
-docs
 /tests/test_data/images/deband1.jpg
-/package.json
-pnpm-lock.yaml### Node template
 # Logs
 logs
 *.log
@@ -132,7 +129,6 @@ dist
 
 # vuepress v2.x temp and cache directory
 .temp
-.cache
 
 # Docusaurus cache and generated files
 .docusaurus
@@ -167,3 +163,4 @@ yarn-error.log
 
 vitepress_doc
 /task_resumer.json
+/ae-24w31a/cache.npz
