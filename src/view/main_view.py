@@ -1,4 +1,4 @@
-from PySide6.QtGui import QIcon
+from PySide6.QtGui import QIcon, QKeyEvent
 from PySide6.QtWidgets import QApplication
 from qfluentwidgets import FluentIcon as FIF
 from qfluentwidgets import FluentWindow, NavigationItemPosition, TextEdit
@@ -33,12 +33,19 @@ class MainView(FluentWindow):
 
     def initWindow(self):
         self.resize(1100, 750)
+        # 设置窗口的最大尺寸
+        self.setMaximumSize(1100, 750)
+        # 设置窗口的最小尺寸
+        self.setMinimumSize(1100, 750)
         self.setWindowIcon(QIcon(':/images/images/logo.ico'))
         self.setWindowTitle('VideoFusion')
 
         desktop = QApplication.screens()[0].availableGeometry()
         w, h = desktop.width(), desktop.height()
         self.move(w // 2 - self.width() // 2, h // 2 - self.height() // 2)
+
+    def keyPressEvent(self, event: QKeyEvent) -> None:
+        self.concate_interface.keyPressEvent(event)
 
 
 if __name__ == '__main__':

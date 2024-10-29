@@ -17,6 +17,7 @@ from PySide6.QtCore import QObject, QThread, Signal
 
 from src.config import cfg
 from src.core.paths import FFPROBE_FILE
+from src import settings
 
 
 def singleton(cls):
@@ -208,13 +209,13 @@ def check_file_readability(file_path: Path) -> bool:
 def get_audio_sample_rate(file_path: Path) -> int:
     # 使用FFmpeg命令获取媒体文件的信息，并输出为json格式
     cmd = [
-            FFPROBE_FILE,
-            '-v', 'error',
-            '-select_streams', 'a:0',
-            '-show_entries', 'stream=sample_rate',
-            '-of', 'json',
-            file_path
-            ]
+        FFPROBE_FILE,
+        '-v', 'error',
+        '-select_streams', 'a:0',
+        '-show_entries', 'stream=sample_rate',
+        '-of', 'json',
+        file_path
+    ]
 
     # 运行FFmpeg命令并获取输出
     result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, encoding='utf-8',
@@ -231,13 +232,23 @@ def get_output_file_path(input_file_path: Path, process_info: str = "out") -> Pa
     return TempDir().get_temp_dir() / f"{input_file_path.stem}_{process_info}{input_file_path.suffix}"
 
 
+def get_file_size(file_path: Path) -> float:
+    """获取文件大小
+
+    Args:
+        file_path (Path): 文件路径
+
+    Returns:
+        float: 文件大小，单位KB
+    """
+    file_size_bytes = file_path.stat().st_size
+    return file_size_bytes / 1024
+
+
 def move_file_to_output_dir(video_list: list[Path]) -> Path:
     output_dir: Path = Path(cfg.get(cfg.output_dir))
-    if output_dir.exists():
-        shutil.rmtree(output_dir, ignore_errors=True)
-        loguru.logger.debug(f"清空输出目录:{output_dir}")
-
     output_dir.mkdir(parents=True, exist_ok=True)
+
     # 将视频移动到输出目录
     for video in video_list:
         output_video = output_dir / video.name
@@ -252,9 +263,10 @@ def is_available_video_file(video_path: str | Path) -> bool:
         return False
     if not video_path.is_file():
         return False
-    if video_path.suffix.lower() not in ['.mp4', '.mov', '.avi', '.mkv', '.flv', '.wmv', '.webm', '.ts']:
+    if (file_size := get_file_size(video_path)) < settings.READABLEVIDEOSIZE:
+        loguru.logger.error(f"视频文件{video_path}大小为{file_size}小于{settings.READABLEVIDEOSIZE}KB, 无法识别")
         return False
-    return True
+    return video_path.suffix.lower() in settings.AVAILABLE_VIDEO_SUFFIX
 
 
 @singleton
@@ -269,6 +281,10 @@ class TempDir:
             @atexit.register
             def delete_temp_dir():
                 self.delete_dir()
+
+    @property
+    def temp_dir(self) -> Path:
+        return self.get_temp_dir()
 
     def get_temp_dir(self) -> Path:
         if self.path.exists():

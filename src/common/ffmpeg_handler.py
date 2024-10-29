@@ -7,10 +7,10 @@ import cv2
 import loguru
 
 from src.config import AudioNoiseReduction, AudioSampleRate, FrameRateAdjustment, VideoCodec, cfg
-from src.core import FFMPEG_ERROR_WORDS
 from src.core.paths import FFMPEG_FILE, ROOT
 from src.signal_bus import SignalBus
 from src.utils import TempDir, get_output_file_path
+from src.settings import FFMPEG_ERROR_WORDS
 
 # ffmpeg的AI降噪模型需要在项目目录下运行
 os.chdir(ROOT)
@@ -29,6 +29,16 @@ class FFmpegHandler:
             self._signal_bus.failed.emit()
             loguru.logger.error(f"FFmpeg文件不存在: {self._ffmpeg_path}")
             raise FileNotFoundError(f"FFmpeg文件不存在: {self._ffmpeg_path}")
+
+    @staticmethod
+    def get_video_total_frame(video_path: Path) -> int:
+        cap = cv2.VideoCapture(str(video_path))
+        if not cap.isOpened():
+            raise ValueError("无法打开视频")
+
+        total_frame = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+        cap.release()
+        return total_frame
 
     def reencode_video(self, input_file_path: Path) -> Path:
         """
@@ -67,11 +77,11 @@ class FFmpegHandler:
         video_filter = []
         frame_rate_adjustment_type: FrameRateAdjustment = cfg.get(cfg.rate_adjustment_type)
         framerate: int = cfg.get(cfg.video_fps)
-        if frame_rate_adjustment_type == FrameRateAdjustment.NORMAL:
+        if frame_rate_adjustment_type == FrameRateAdjustment.Normal:
             video_filter.append(f"fps=fps={framerate}")
-        elif frame_rate_adjustment_type == FrameRateAdjustment.MOTION_INTERPOLATION:
+        elif frame_rate_adjustment_type == FrameRateAdjustment.MotionInterpolation:
             video_filter.append(
-                    f"minterpolate='mi_mode=mci:mc_mode=aobmc:me_mode=bidir:mb_size=16:vsbmc=1:fps={framerate}'")
+                f"minterpolate='mi_mode=mci:mc_mode=aobmc:me_mode=bidir:mb_size=16:vsbmc=1:fps={framerate}'")
 
         command = self._get_ffmpeg_command(input_file_path,
                                            output_file_path,
@@ -141,7 +151,7 @@ class FFmpegHandler:
         has_audio: bool = self._check_audio_stream_with_ffmpeg(input_file_path)
         if not has_audio:
             self.run_command(
-                    f'"{self._ffmpeg_path}" -f lavfi -i anullsrc=r=44100:cl=stereo -t 10 "{output_file_path}"')
+                f'"{self._ffmpeg_path}" -f lavfi -i anullsrc=r=44100:cl=stereo -t 10 "{output_file_path}"')
             return output_file_path
         other_command = [' -vn -acodec pcm_s16le ']
         command = self._get_ffmpeg_command(input_file_path,
@@ -205,7 +215,7 @@ class FFmpegHandler:
                                                output_audio_path,
                                                audio_filter=audio_filter)
             self.run_command(command)
-        elif mode == AudioNoiseReduction.STATIC:
+        elif mode == AudioNoiseReduction.Static:
             audio_filter = [model_value]
             command = self._get_ffmpeg_command(input_audio_path,
                                                output_audio_path,
@@ -285,15 +295,6 @@ class FFmpegHandler:
         result = subprocess.run([self._ffmpeg_path, '-formats'], capture_output=True, text=True)
         formats = re.findall(r'D\s+([a-zA-Z0-9]+)', result.stdout)
         return [f'.{fmt}' for fmt in formats]
-
-    def get_video_total_frame(self, video_path: Path) -> int:
-        cap = cv2.VideoCapture(str(video_path))
-        if not cap.isOpened():
-            raise ValueError("无法打开视频")
-
-        total_frame = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-        cap.release()
-        return total_frame
 
     def run_command(self, command: str, progress_total: int = 0):
         if not command:
@@ -409,7 +410,7 @@ if __name__ == '__main__':
 
     f = FFmpegHandler()
     print(f.extract_audio_from_video(
-            Path(r"E:\load\python\Project\VideoFusion\TempAndTest\dy\b7bb97e21600b07f66c21e7932cb7550.mp4")))
+        Path(r"E:\load\python\Project\VideoFusion\TempAndTest\dy\v\测试\去黑边\视频  (3).mp4")))
     # print(f.reencode_video(Path(r"E:\load\python\Project\VideoFusion\TempAndTest\dy\v\【111.mp4")))
     # f.extract_audio_from_video(video_input_path)
     # f.replace_video_audio(video_input_path,

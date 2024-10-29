@@ -10,6 +10,7 @@ IMAGES_DIR = ASSETS_DIR / "images"
 BIN_DIR = ROOT / "bin"
 TEMP_DIR = ROOT / "Temp"
 OUTPUT_DIR = ROOT / "output"
+MODELS_DIR = ROOT / "models"
 
 # FILE
 OUTPUT_FILE = ROOT / "output.mp4"
@@ -23,6 +24,7 @@ QRC_PY_FILE = ROOT / "resource_rc.py"
 LOG_FILE = ROOT / "log.log"
 ABOUT_HTML_FILE = ASSETS_DIR / "about.html"
 RESUME_FILE = ROOT / "task_resumer.json"
+AUDIO_SEPARATOR_EXE_FILE = BIN_DIR / 'audio_sep' / 'audio_sep.exe'
 
 # MODEL
 ESPCN_x2_FILE = BIN_DIR / "ESPCN_x2.pb"
